@@ -4363,8 +4363,20 @@ impl Arg {
         }
 
         debug_assert!(self.is_takes_value_set());
+
+        let is_required = |n| match self.is_positional() {
+            true => required && (num_vals.min_values() != 0),
+            false => {
+                // If all values are optional, the [] get rendered by the caller:
+                //    --foo[=<bar>]
+                // In this case, treat as required.
+                let required = self.get_min_vals() == 0;
+                required || (n < num_vals.min_values())
+            }
+        };
+
         for (n, val_name) in val_names.iter().enumerate() {
-            let arg_name = if self.is_positional() && (num_vals.min_values() == 0 || !required) {
+            let arg_name = if !is_required(n) {
                 format!("[{val_name}]")
             } else {
                 format!("<{val_name}>")
@@ -4646,7 +4658,7 @@ mod test {
             .value_names(["file", "name"]);
         o._build();
 
-        assert_eq!(o.to_string(), "-o <file> <name>...");
+        assert_eq!(o.to_string(), "-o <file> [name]...");
     }
 
     #[test]
