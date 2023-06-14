@@ -4365,7 +4365,7 @@ impl Arg {
         debug_assert!(self.is_takes_value_set());
 
         let is_required = |n| match self.is_positional() {
-            true => required && (num_vals.min_values() != 0),
+            true => required || (n < num_vals.min_values()),
             false => {
                 // If all values are optional, the [] get rendered by the caller:
                 //    --foo[=<bar>]
